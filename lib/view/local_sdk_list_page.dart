@@ -79,7 +79,7 @@ class _LocalSdkListPageState extends State<LocalSdkListPage> with LocalSDKMixin 
   @override
   void initState() {
     super.initState();
-    initData();
+    loadData();
   }
 
 }

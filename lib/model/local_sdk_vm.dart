@@ -5,22 +5,47 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fvm/model/sdk_info.dart';
 import 'package:fvm/utils/sp_manager.dart';
+import 'package:process_run/shell.dart';
 
+///本地sdk列表viewmodel
 mixin LocalSDKMixin<T extends StatefulWidget> on State<T> {
   String? sdkDirPath;
   final List<SdkInfo> sdkList = [];
 
   @override
   void initState() {
-
     super.initState();
   }
 
-  void initData() async {
-    sdkDirPath = await SpManager().getString("sdk_dir_path", defaultValue: null);
+  ///加载缓存及数据
+  void loadData() async {
+    sdkDirPath =
+        await SpManager().getString("sdk_dir_path", defaultValue: null);
     print("initData: $sdkDirPath");
     if (sdkDirPath?.isNotEmpty == true) {
       getFlutterSDKList();
+    }
+
+    if (Platform.isMacOS) {
+      final runResult = await Process.run('id', ['-un']);
+      final userRaw = runResult.stdout as String;
+      //返回的字符串最后有一个"\n"要处理掉
+      String userName = userRaw.trim();
+      String saveDir = '/Users/$userName/FlutterSDK';
+      print("saveDir: $saveDir");
+    } else {
+      List<ProcessResult> results = await Shell().run('''
+    set
+  ''');
+      for (ProcessResult result in results) {
+        final userRaw = result.stdout as String;
+        final List<String> lines = userRaw.trim().split("\n");
+        for (String text in lines) {
+          if (text.toLowerCase().contains("flutter")) {
+            print('result: ${text}');
+          }
+        }
+      }
     }
   }
 
