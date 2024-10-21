@@ -1,16 +1,15 @@
-# fvm
+# Flutter SDK Version Manager
+## 实现方式
+- 预先配置好环境变量，路径指向【sdk文件夹】下的flutter
+- 切换不同sdk文件夹名称，来变更sdk版本
 
-flutter version manager
+## 打包
+- macOS
+```
+flutter build macos
+```
+- windows
+```
+flutter build windows
+```
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
