@@ -1,12 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:fvm/model/local_sdk_vm.dart';
-import 'package:fvm/model/sdk_info.dart';
-import 'package:fvm/view/local_sdk_list_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'services/config_service.dart';
+import 'pages/main_page.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化配置服务
+  await ConfigService.instance.init();
+  
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -15,12 +18,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Version Manager',
+      title: 'Flutter SDK 管理器',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: false,
+        useMaterial3: true,
       ),
-      home: const LocalSdkListPage(title: 'Flutter Version Manager'),
+      home: const MainPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

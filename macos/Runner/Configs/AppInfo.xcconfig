@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = fvm
+PRODUCT_NAME = fluttervermanager
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.yifan.fvm.fvm
+PRODUCT_BUNDLE_IDENTIFIER = com.kyifan.fluttervermanager
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2024 com.yifan.fvm. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.kyifan. All rights reserved.
