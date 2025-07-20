@@ -49,9 +49,11 @@ class SdkCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // 频道标签
-                _buildChannelChip(release.channel),
+                // 频道标签 - 只有当channel不是unknown时才显示
+                if (release.channel.toLowerCase() != 'unknown') ...[
+                  const SizedBox(width: 8),
+                  _buildChannelChip(release.channel),
+                ],
                 const Spacer(),
                 // 状态标识
                 if (release.isActive)

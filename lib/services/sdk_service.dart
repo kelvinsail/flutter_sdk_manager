@@ -69,17 +69,34 @@ class SdkService {
     
     try {
       final entities = sdkDir.listSync();
+      final seenVersions = <String>{};
       
       for (final entity in entities) {
         if (entity is Directory) {
           final versionPath = entity.path;
           final versionName = path.basename(versionPath);
           
+          // 跳过符号链接目录（如 current）和系统目录
+          if (versionName == 'current' || 
+              versionName == 'scripts' || 
+              versionName == 'instructions' ||
+              versionName.startsWith('.')) {
+            continue;
+          }
+          
           // 检查是否是有效的Flutter SDK目录
           final sdkInfo = await _analyzeSdkDirectory(versionPath);
           if (sdkInfo != null) {
+            final version = sdkInfo['version'] ?? versionName;
+            
+            // 跳过重复版本
+            if (seenVersions.contains(version)) {
+              continue;
+            }
+            seenVersions.add(version);
+            
             localReleases.add(FlutterRelease(
-              version: sdkInfo['version'] ?? versionName,
+              version: version,
               channel: sdkInfo['channel'] ?? 'unknown',
               sha: sdkInfo['sha'] ?? '',
               releaseDate: sdkInfo['releaseDate'] ?? '',

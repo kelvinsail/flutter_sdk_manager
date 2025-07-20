@@ -215,6 +215,16 @@ final filteredRemoteSdkProvider = Provider<AsyncValue<List<FlutterRelease>>>((re
     data: (releases) {
       List<FlutterRelease> filtered = releases;
 
+      // 去重处理 - 按版本号去重，保留第一个
+      final seenVersions = <String>{};
+      filtered = filtered.where((release) {
+        if (seenVersions.contains(release.version)) {
+          return false;
+        }
+        seenVersions.add(release.version);
+        return true;
+      }).toList();
+
       // 频道过滤
       if (channelFilter != 'all') {
         filtered = filtered.where((release) => release.channel == channelFilter).toList();
