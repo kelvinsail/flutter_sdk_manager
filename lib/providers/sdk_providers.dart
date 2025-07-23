@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/flutter_release.dart';
 import '../services/sdk_service.dart';
 import '../services/config_service.dart';
+import '../services/app_info_service.dart';
 
 // 配置服务提供者
 final configServiceProvider = Provider<ConfigService>((ref) {
@@ -197,6 +198,17 @@ class ConfigNotifier extends StateNotifier<Map<String, dynamic>> {
 // 配置状态提供者
 final configProvider = StateNotifierProvider<ConfigNotifier, Map<String, dynamic>>((ref) {
   return ConfigNotifier();
+});
+
+// 应用信息服务提供者
+final appInfoServiceProvider = Provider<AppInfoService>((ref) {
+  return AppInfoService();
+});
+
+// 应用信息提供者
+final appInfoProvider = FutureProvider<dynamic>((ref) async {
+  final appInfoService = ref.watch(appInfoServiceProvider);
+  return await appInfoService.packageInfo;
 });
 
 // 搜索过滤器

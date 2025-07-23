@@ -12,6 +12,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(configProvider);
     final configNotifier = ref.read(configProvider.notifier);
+    final appInfoAsync = ref.watch(appInfoProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -146,23 +147,48 @@ class SettingsPage extends ConsumerWidget {
             icon: Icons.settings,
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('关于应用'),
-                  subtitle: const Text('Flutter SDK 管理器 v1.0.0'),
-                  onTap: () {
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'Flutter SDK 管理器',
-                      applicationVersion: '1.0.0',
-                      applicationIcon: const Icon(Icons.flutter_dash),
-                      children: [
-                        const Text('一个用于管理Flutter SDK版本的工具'),
-                        const SizedBox(height: 8),
-                        const Text('支持多版本管理、快速切换和云端下载'),
-                      ],
-                    );
-                  },
+                appInfoAsync.when(
+                  data: (packageInfo) => ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('关于应用'),
+                    subtitle: Text('Flutter SDK 管理器 v${packageInfo.version ?? '未知'}'),
+                    onTap: () {
+                      showAboutDialog(
+                        context: context,
+                        applicationName: 'Flutter SDK 管理器',
+                        applicationVersion: '${packageInfo.version ?? '未知'}+${packageInfo.buildNumber ?? '0'}',
+                        applicationIcon: const Icon(Icons.flutter_dash),
+                        children: [
+                          const Text('一个用于管理Flutter SDK版本的工具'),
+                          const SizedBox(height: 8),
+                          const Text('支持多版本管理、快速切换和云端下载'),
+                        ],
+                      );
+                    },
+                  ),
+                  loading: () => const ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('关于应用'),
+                    subtitle: Text('加载中...'),
+                  ),
+                  error: (error, stack) => ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('关于应用'),
+                    subtitle: const Text('版本信息加载失败'),
+                    onTap: () {
+                      showAboutDialog(
+                        context: context,
+                        applicationName: 'Flutter SDK 管理器',
+                        applicationVersion: '未知版本',
+                        applicationIcon: const Icon(Icons.flutter_dash),
+                        children: [
+                          const Text('一个用于管理Flutter SDK版本的工具'),
+                          const SizedBox(height: 8),
+                          const Text('支持多版本管理、快速切换和云端下载'),
+                        ],
+                      );
+                    },
+                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.refresh),
