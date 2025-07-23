@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttervermanager/services/windows_size_service.dart';
 import 'services/config_service.dart';
 import 'pages/main_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    final WindowSizeService windowSizeService = WindowSizeService();
+    windowSizeService.initialize();
+  }
   // 初始化配置服务
   await ConfigService.instance.init();
   
@@ -18,7 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter SDK 管理器',
+      title: 'Flutter Version Manager',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,

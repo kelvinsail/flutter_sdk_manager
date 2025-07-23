@@ -14,7 +14,7 @@ cd "$( dirname "$0"  )"
 cd ../
 # 先清除build文件夹的缓存，避免影响打包
 #flutter clean
-## 直接build，会生成一个.app包
+# 直接build，会生成一个.app包
 #flutter build macos --release
 
 #从pubspec.yaml文件获取版本号
@@ -47,7 +47,7 @@ if [ ${fileNamePrefix}x == ""x ] ; then
 fi
 
 # 最后生成的文件名
-fileName="${fileNamePrefix}_macos_${buildName}_${buildNumber}.dmg"
+fileName="${fileNamePrefix}_macos_${buildName}.dmg"
 
 cd "$( dirname "$0"  )"
 # 判断目录是否存在
@@ -65,13 +65,13 @@ test -f "$fileName" && rm "$fileName"
 create-dmg \
   --volname "${appName}安装器" \
   --background "../../../../../../bg.svg" \
-  --window-pos 200 120 \
+  --window-pos 400 200 \
   --window-size 660 400 \
   --icon-size 100 \
-  --icon "${appName}.app" 240 190 \
+  --icon "${appName}.app" 160 185  \
   --hide-extension "${appName}.app" \
-  --app-drop-link 550 190 \
+  --app-drop-link 500 185 \
   "./$fileName" \
-  "../"
+  "../${appName}.app"
 
 open ./

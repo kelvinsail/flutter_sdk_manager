@@ -45,7 +45,7 @@ class _MainPageState extends ConsumerState<MainPage> {
               color: Theme.of(context).colorScheme.surface,
               border: Border(
                 right: BorderSide(
-                  color: Theme.of(context).dividerColor,
+                  color: Colors.black12,
                   width: 1,
                 ),
               ),
@@ -60,7 +60,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                     color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
+                        color: Colors.black12,
                         width: 1,
                       ),
                     ),
@@ -136,7 +136,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                     color: Theme.of(context).colorScheme.surface,
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
+                        color: Colors.black12,
                         width: 1,
                       ),
                     ),
