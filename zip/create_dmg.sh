@@ -7,7 +7,7 @@ flutter build macos -v
 # 重命名
 mv ./build/macos/Build/Products/Release/fluttervermanager.app ./build/macos/Build/Products/Release/FVM.app
 
-# 1.打包 flutter build macos
+# 1.zip flutter build macos
 # 2.授予权限 chmod +x create_dmg.sh
 
 # 定义源目录
