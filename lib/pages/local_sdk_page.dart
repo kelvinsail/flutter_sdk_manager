@@ -6,6 +6,7 @@ import '../widgets/sdk_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_dialog.dart';
 import '../widgets/switch_result_dialog.dart';
+import '../widgets/loading_dialog.dart';
 
 class LocalSdkPage extends ConsumerWidget {
   const LocalSdkPage({super.key});
@@ -98,10 +99,24 @@ class LocalSdkPage extends ConsumerWidget {
 
                               if (shouldRemove == true) {
                                 try {
+                                  // 显示加载状态
+                                  if (context.mounted) {
+                                    LoadingDialog.show(context, '正在删除 ${release.version}...');
+                                  }
+                                  
+                                  // 执行删除操作
                                   await ref
                                       .read(sdkManagerProvider.notifier)
                                       .removeSdk(release.version);
+                                  
+                                  // 关闭加载对话框
+                                  if (context.mounted) {
+                                    LoadingDialog.hide(context);
+                                  }
+                                  
+                                  // 刷新相关状态
                                   ref.invalidate(localSdkProvider);
+                                  ref.invalidate(currentSdkProvider);
                                   
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -112,6 +127,11 @@ class LocalSdkPage extends ConsumerWidget {
                                     );
                                   }
                                 } catch (e) {
+                                  // 关闭加载对话框
+                                  if (context.mounted) {
+                                    LoadingDialog.hide(context);
+                                  }
+                                  
                                   if (context.mounted) {
                                     ErrorDialog.show(context, '删除失败', e.toString());
                                   }

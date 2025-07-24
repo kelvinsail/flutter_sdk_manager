@@ -106,7 +106,7 @@ class SdkService {
               size: 0,
               sha256: '',
               isInstalled: true,
-              isActive: versionName == currentVersion,
+              isActive: versionName == currentVersion || version == currentVersion,
             ));
           }
         }
@@ -392,17 +392,24 @@ class SdkService {
 
   // 切换SDK版本
   Future<Map<String, dynamic>> switchSdkVersion(String version) async {
-    final sdkPath = path.join(_config.sdkRootPath, version);
+    // 通过版本号查找对应的SDK目录
+    final sdkPath = await _findSdkPathByVersion(version);
     
-    if (!Directory(sdkPath).existsSync()) {
-      throw Exception('SDK版本 $version 不存在');
+    if (sdkPath == null) {
+      // 打印调试信息
+      await debugPrintSdkMapping();
+      throw Exception('SDK版本 $version 不存在，请检查版本号是否正确');
     }
     
     if (!_isValidFlutterSdk(sdkPath)) {
       throw Exception('无效的Flutter SDK目录');
     }
     
-    _config.currentSdkVersion = version;
+    // 获取目录名作为当前版本标识
+    final directoryName = path.basename(sdkPath);
+    _config.currentSdkVersion = directoryName;
+    
+    print('切换到SDK版本: $version，目录: $directoryName，路径: $sdkPath');
     
     // 尝试多种切换方案
     final result = await _updateSystemPath(sdkPath, version);
@@ -659,31 +666,205 @@ flutter --version
 
   // 删除SDK版本
   Future<void> removeSdkVersion(String version) async {
-    final sdkPath = path.join(_config.sdkRootPath, version);
-    final sdkDir = Directory(sdkPath);
+    // 通过版本号查找对应的SDK目录
+    final sdkPath = await _findSdkPathByVersion(version);
     
-    if (!sdkDir.existsSync()) {
-      throw Exception('SDK版本 $version 不存在');
+    if (sdkPath == null) {
+      // 打印调试信息
+      await debugPrintSdkMapping();
+      throw Exception('SDK版本 $version 不存在，请检查版本号是否正确');
     }
     
-    if (_config.currentSdkVersion == version) {
+    final sdkDir = Directory(sdkPath);
+    final directoryName = path.basename(sdkPath);
+    
+    print('删除SDK版本: $version，目录: $directoryName，路径: $sdkPath');
+    
+    if (_config.currentSdkVersion == directoryName) {
       throw Exception('无法删除当前激活的SDK版本');
     }
     
-    sdkDir.deleteSync(recursive: true);
+    try {
+      // 检查目录是否可写
+      if (!sdkDir.statSync().modeString().contains('w')) {
+        throw Exception('没有删除权限，请检查目录权限');
+      }
+      
+      // 使用异步删除操作，确保删除完成
+      await sdkDir.delete(recursive: true);
+      
+      // 等待一小段时间确保文件系统操作完成
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 验证删除是否成功
+      if (sdkDir.existsSync()) {
+        throw Exception('删除失败：目录仍然存在，可能是权限问题');
+      }
+      
+      // 强制刷新文件系统缓存
+      try {
+        await sdkDir.parent.list().toList();
+      } catch (e) {
+        // 忽略刷新错误
+      }
+      
+      print('成功删除SDK版本: $version，路径: $sdkPath');
+    } catch (e) {
+      if (e.toString().contains('Permission denied') || 
+          e.toString().contains('Access is denied')) {
+        throw Exception('删除失败：权限不足，请以管理员身份运行或检查目录权限');
+      }
+      throw Exception('删除SDK版本失败: $e');
+    }
+  }
+
+  // 调试方法：打印所有SDK的版本映射信息
+  Future<void> debugPrintSdkMapping() async {
+    final mapping = await getSdkVersionMapping();
+    print('=== SDK版本映射信息 ===');
+    if (mapping.isEmpty) {
+      print('没有找到任何SDK');
+    } else {
+      mapping.forEach((version, directory) {
+        print('版本: $version -> 目录: $directory');
+      });
+    }
+    print('当前激活的目录名: ${_config.currentSdkVersion}');
+    print('=====================');
+  }
+
+  // 测试方法：验证版本查找功能
+  Future<void> testVersionLookup(String version) async {
+    print('=== 测试版本查找: $version ===');
+    final sdkPath = await _findSdkPathByVersion(version);
+    if (sdkPath != null) {
+      print('找到SDK路径: $sdkPath');
+      final sdkInfo = await _analyzeSdkDirectory(sdkPath);
+      print('SDK信息: $sdkInfo');
+    } else {
+      print('未找到SDK版本: $version');
+      await debugPrintSdkMapping();
+    }
+    print('=====================');
+  }
+
+  // 通过版本号查找SDK目录路径
+  Future<String?> _findSdkPathByVersion(String version) async {
+    final sdkDir = Directory(_config.sdkRootPath);
+    
+    if (!sdkDir.existsSync()) {
+      return null;
+    }
+    
+    try {
+      final entities = sdkDir.listSync();
+      
+      for (final entity in entities) {
+        if (entity is Directory) {
+          final versionPath = entity.path;
+          final versionName = path.basename(versionPath);
+          
+          // 跳过符号链接目录和系统目录
+          if (versionName == 'current' || 
+              versionName == 'scripts' || 
+              versionName == 'instructions' ||
+              versionName.startsWith('.')) {
+            continue;
+          }
+          
+          // 检查是否是有效的Flutter SDK目录
+          final sdkInfo = await _analyzeSdkDirectory(versionPath);
+          if (sdkInfo != null) {
+            final sdkVersion = sdkInfo['version'];
+            if (sdkVersion == version) {
+              return versionPath;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('查找SDK版本时出错: $e');
+    }
+    
+    return null;
+  }
+
+  // 获取所有SDK的版本映射信息（用于调试）
+  Future<Map<String, String>> getSdkVersionMapping() async {
+    final mapping = <String, String>{};
+    final sdkDir = Directory(_config.sdkRootPath);
+    
+    if (!sdkDir.existsSync()) {
+      return mapping;
+    }
+    
+    try {
+      final entities = sdkDir.listSync();
+      
+      for (final entity in entities) {
+        if (entity is Directory) {
+          final versionPath = entity.path;
+          final versionName = path.basename(versionPath);
+          
+          // 跳过符号链接目录和系统目录
+          if (versionName == 'current' || 
+              versionName == 'scripts' || 
+              versionName == 'instructions' ||
+              versionName.startsWith('.')) {
+            continue;
+          }
+          
+          // 检查是否是有效的Flutter SDK目录
+          final sdkInfo = await _analyzeSdkDirectory(versionPath);
+          if (sdkInfo != null) {
+            final sdkVersion = sdkInfo['version'];
+            if (sdkVersion != null) {
+              mapping[sdkVersion] = versionName;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('获取SDK版本映射时出错: $e');
+    }
+    
+    return mapping;
   }
 
   // 获取当前激活的SDK信息
   Future<FlutterRelease?> getCurrentSdk() async {
-    final currentVersion = _config.currentSdkVersion;
-    if (currentVersion.isEmpty) {
+    final currentDirectoryName = _config.currentSdkVersion;
+    if (currentDirectoryName.isEmpty) {
       return null;
     }
     
+    // 首先尝试通过目录名查找
+    final sdkPath = path.join(_config.sdkRootPath, currentDirectoryName);
+    if (Directory(sdkPath).existsSync()) {
+      final sdkInfo = await _analyzeSdkDirectory(sdkPath);
+      if (sdkInfo != null) {
+        return FlutterRelease(
+          version: sdkInfo['version'] ?? currentDirectoryName,
+          channel: sdkInfo['channel'] ?? 'unknown',
+          sha: sdkInfo['sha'] ?? '',
+          releaseDate: sdkInfo['releaseDate'] ?? '',
+          dartSdkVersion: sdkInfo['dartSdkVersion'] ?? '',
+          dartSdkArch: sdkInfo['dartSdkArch'] ?? '',
+          archive: '',
+          size: 0,
+          sha256: '',
+          isInstalled: true,
+          isActive: true,
+        );
+      }
+    }
+    
+    // 如果通过目录名找不到，尝试从所有本地SDK中查找
     final localReleases = await getLocalReleases();
-    return localReleases.firstWhere(
-      (release) => release.version == currentVersion,
-      orElse: () => localReleases.first,
-    );
+    if (localReleases.isNotEmpty) {
+      return localReleases.first;
+    }
+    
+    return null;
   }
 } 

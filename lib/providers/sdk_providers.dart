@@ -144,6 +144,7 @@ class SdkNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
+      rethrow; // 重新抛出异常，让UI层能够捕获
     }
   }
 }

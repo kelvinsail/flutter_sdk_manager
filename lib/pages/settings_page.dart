@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import '../providers/sdk_providers.dart';
 import '../services/config_service.dart';
+import '../services/sdk_service.dart';
 import '../widgets/setting_card.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -251,6 +252,86 @@ class SettingsPage extends ConsumerWidget {
                   leading: const Icon(Icons.link),
                   title: const Text('当前镜像源'),
                   subtitle: Text(ConfigService.instance.platformReleaseUrl),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // 调试工具
+          SettingCard(
+            title: '调试工具',
+            subtitle: '用于调试SDK版本识别问题',
+            icon: Icons.bug_report,
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('查看SDK版本映射'),
+                  subtitle: const Text('显示所有SDK的版本号和目录名映射'),
+                  onTap: () async {
+                    await SdkService.instance.debugPrintSdkMapping();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('请查看控制台输出的SDK版本映射信息'),
+                          backgroundColor: Colors.blue,
+                        ),
+                      );
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.search),
+                  title: const Text('测试版本查找'),
+                  subtitle: const Text('测试特定版本的查找功能'),
+                  onTap: () async {
+                    final TextEditingController controller = TextEditingController();
+                    final version = await showDialog<String>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('测试版本查找'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('请输入要测试的Flutter版本号：'),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: controller,
+                              decoration: const InputDecoration(
+                                labelText: '版本号',
+                                hintText: '例如: 3.16.5',
+                              ),
+                              onSubmitted: (value) => Navigator.pop(context, value),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('取消'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, controller.text),
+                            child: const Text('测试'),
+                          ),
+                        ],
+                      ),
+                    );
+                    
+                    if (version != null && version.isNotEmpty) {
+                      await SdkService.instance.testVersionLookup(version);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('已测试版本查找: $version，请查看控制台输出'),
+                            backgroundColor: Colors.blue,
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
               ],
             ),
